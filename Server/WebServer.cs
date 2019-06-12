@@ -21,7 +21,7 @@ namespace CodeGoat.Server
             public Func<HttpListenerRequest, Match, string> handler;
         }
 
-        public WebServer(int port = 8080)
+        public WebServer(int port = 80)
         {
             listener.Prefixes.Add("http://*:" + port.ToString() + "/");
         }
