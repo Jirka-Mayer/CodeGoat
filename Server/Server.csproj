@@ -32,6 +32,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="Fleck">
+      <HintPath>..\packages\Fleck.1.1.0\lib\net45\Fleck.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -43,6 +46,9 @@
       <Project>{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}</Project>
       <Name>LightJson</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

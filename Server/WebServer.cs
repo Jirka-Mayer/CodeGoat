@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace CodeGoat.Server
 {
-    public class WebServer
+    public class HttpServer
     {
         private HttpListener listener = new HttpListener();
 
@@ -21,7 +21,7 @@ namespace CodeGoat.Server
             public Func<HttpListenerRequest, Match, string> handler;
         }
 
-        public WebServer(int port = 80)
+        public HttpServer(int port = 80)
         {
             listener.Prefixes.Add("http://*:" + port.ToString() + "/");
         }

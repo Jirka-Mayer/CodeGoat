@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.IO;
+using Fleck;
 
 namespace CodeGoat.Server
 {
@@ -9,38 +10,56 @@ namespace CodeGoat.Server
 	{
 		public static void Main(string[] args)
 		{
+            // ports
             int httpPort = 8080;
+            int webSocketPort = 8181;
 
-			WebServer ws = new WebServer(httpPort);
+            // disable fleck logging
+            FleckLog.LogAction = (level, message, ex) => {
+                // nothing
+            };
+
+            var httpServer = new HttpServer(httpPort);
+            var webSocketServer = new WebSocketServer("ws://0.0.0.0:" + webSocketPort);
             
-            RegisterWebServerRoutes(ws);
-			ws.Run();
+            RegisterHttpServerRoutes(httpServer);
+
+			httpServer.Run();
+            webSocketServer.Start(HandleWebSocketServerConnection);
             
-            Console.WriteLine($"Web server running at port { httpPort }...");
+            Console.WriteLine($"Http server running at port { httpPort }...");
+            Console.WriteLine($"Web socket server running at port { webSocketPort }...");
 			Console.WriteLine("Press a key to quit.");
 			Console.ReadKey();
 
-            ws.Stop();
+            httpServer.Stop();
 		}
 
-        private static void RegisterWebServerRoutes(WebServer ws)
+        private static void RegisterHttpServerRoutes(HttpServer httpServer)
         {
-            ws.On("/", "text/plain", (request, match) => {
+            httpServer.On("/", "text/plain", (request, match) => {
                 return "Hello!";
             });
 
-            ws.On("/room/(.+)", "text/html", (request, match) => {
+            httpServer.On("/room/(.+)", "text/html", (request, match) => {
                 return File.ReadAllText("html/room.html")
                     .Replace("%RoomId%", match.Groups[1].Value);
             });
 
-            ws.On("/js/(.+)", "application/javascript", (request, match) => {
+            httpServer.On("/js/(.+)", "application/javascript", (request, match) => {
                 return File.ReadAllText("." + match.Groups[0].Value);
             });
 
-            ws.On("/css/(.+)", "text/css", (request, match) => {
+            httpServer.On("/css/(.+)", "text/css", (request, match) => {
                 return File.ReadAllText("." + match.Groups[0].Value);
             });
+        }
+
+        private static void HandleWebSocketServerConnection(IWebSocketConnection connection)
+        {
+            connection.OnOpen = () => Console.WriteLine("Open!");
+            connection.OnClose = () => Console.WriteLine("Close!");
+            connection.OnMessage = message => connection.Send("Server echoes: " + message);
         }
 	}
 }
