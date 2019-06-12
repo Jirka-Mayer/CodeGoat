@@ -37,5 +37,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">
+      <Project>{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}</Project>
+      <Name>LightJson</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

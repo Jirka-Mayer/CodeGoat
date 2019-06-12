@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{EF064D42-6594-4F56-B1CB-4CA56366FB90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightJson", "LightJson\Sources\LightJson\LightJson.csproj", "{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,5 +15,9 @@ Global
 		{EF064D42-6594-4F56-B1CB-4CA56366FB90}.Debug|x86.Build.0 = Debug|x86
 		{EF064D42-6594-4F56-B1CB-4CA56366FB90}.Release|x86.ActiveCfg = Release|x86
 		{EF064D42-6594-4F56-B1CB-4CA56366FB90}.Release|x86.Build.0 = Release|x86
+		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Debug|x86.Build.0 = Debug|Any CPU
+		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Release|x86.ActiveCfg = Release|Any CPU
+		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

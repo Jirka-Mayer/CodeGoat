@@ -6,7 +6,8 @@ namespace CodeGoat.Server
 	{
 		public static void Main (string[] args)
 		{
-			Console.WriteLine ("Hello World!");
+            var jo = new LightJson.JsonObject().Add("foo", 42);
+            Console.WriteLine(jo.ToString());
 		}
 	}
 }
