@@ -248,7 +248,9 @@ class MainController
     {
         console.warn("Requesting document broadcast.")
 
-        // TODO
+        this.socket.send(JSON.stringify({
+            type: "request-document-broadcast"
+        }))
     }
 
     /**

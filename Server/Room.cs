@@ -82,6 +82,10 @@ namespace CodeGoat.Server
                     ChangeReceived(client, message["change"].AsJsonObject);
                     break;
 
+                case "request-document-broadcast":
+                    BroadcastDocumentState();
+                    break;
+
                 default:
                     Console.WriteLine(
                         $"Client {client.Id} sent message {message} to the room '{Id}' and it wasn't understood."
@@ -108,6 +112,25 @@ namespace CodeGoat.Server
                             .Add("type", "change-broadcast")
                             .Add("familiar", client == from)
                             .Add("change", change)
+                    );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends current document state to all clients
+        /// </summary>
+        public void BroadcastDocumentState()
+        {
+            lock (syncLock)
+            {
+                foreach (Client client in clients)
+                {
+                    client.Send(
+                        new JsonObject()
+                            .Add("type", "document-state")
+                            .Add("document", document.GetText())
+                            .Add("initial", false)
                     );
                 }
             }
