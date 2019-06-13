@@ -102,7 +102,10 @@ namespace CodeGoat.Server
         {
             lock (syncLock)
             {
-                // TODO: edit document
+                // change document
+                document.ApplyChange(
+                    Change.FromJsonObject(change, document)
+                );
 
                 // broadcast change
                 foreach (Client client in clients)

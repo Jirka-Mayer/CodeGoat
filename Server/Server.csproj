@@ -44,6 +44,8 @@
     <Compile Include="Client.cs" />
     <Compile Include="Room.cs" />
     <Compile Include="Document.cs" />
+    <Compile Include="Location.cs" />
+    <Compile Include="Change.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">

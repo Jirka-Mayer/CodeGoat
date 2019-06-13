@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightJson", "LightJson\Sources\LightJson\LightJson.csproj", "{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerTests", "ServerTests\ServerTests.csproj", "{C5F4F951-ECB8-4639-B8AE-3A5EDADE4584}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -19,5 +21,9 @@ Global
 		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Debug|x86.Build.0 = Debug|Any CPU
 		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Release|x86.ActiveCfg = Release|Any CPU
 		{3BC85E8B-8A37-4015-B4A8-2D973F8622F1}.Release|x86.Build.0 = Release|Any CPU
+		{C5F4F951-ECB8-4639-B8AE-3A5EDADE4584}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C5F4F951-ECB8-4639-B8AE-3A5EDADE4584}.Debug|x86.Build.0 = Debug|Any CPU
+		{C5F4F951-ECB8-4639-B8AE-3A5EDADE4584}.Release|x86.ActiveCfg = Release|Any CPU
+		{C5F4F951-ECB8-4639-B8AE-3A5EDADE4584}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
