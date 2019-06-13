@@ -25,18 +25,30 @@ editor.on("change", (instance, change) => {
 
 
 
-
-
-let socket = new WebSocket("ws://localhost:8181")
+let socket = new WebSocket("ws://" + window.location.hostname + ":" + CodeGoatConfig.webSocketPort)
 window.socket = socket
 
 socket.addEventListener("open", (e) => {
-    console.log("WebSocket connection established.")
+    editor.setValue(editor.getValue() + "Socket open.\n")
 
-    socket.send("Hello server!");
+    let message = {
+        type: "join-room",
+        room: CodeGoatConfig.roomId
+    }
+    
+    socket.send(JSON.stringify(message));
 });
 
 socket.addEventListener("message", (e) => {
-    console.log(e)
+    editor.setValue(editor.getValue() + "Server sent: " + e.data + "\n")
     //console.log(JSON.parse(e.data))
+});
+
+socket.addEventListener("error", (e) => {
+    alert("WebSocket connection failed...")
+    console.error(e)
+});
+
+socket.addEventListener("close", (e) => {
+    editor.setValue(editor.getValue() + "Socket closed.\n")
 });

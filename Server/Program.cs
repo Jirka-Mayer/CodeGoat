@@ -19,13 +19,14 @@ namespace CodeGoat.Server
                 // nothing
             };
 
+            var editorServer = new EditorServer();
             var httpServer = new HttpServer(httpPort);
             var webSocketServer = new WebSocketServer("ws://0.0.0.0:" + webSocketPort);
             
-            RegisterHttpServerRoutes(httpServer);
+            RegisterHttpServerRoutes(httpServer, webSocketPort);
 
 			httpServer.Run();
-            webSocketServer.Start(HandleWebSocketServerConnection);
+            webSocketServer.Start(editorServer.HandleNewConnection);
             
             Console.WriteLine($"Http server running at port { httpPort }...");
             Console.WriteLine($"Web socket server running at port { webSocketPort }...");
@@ -35,7 +36,7 @@ namespace CodeGoat.Server
             httpServer.Stop();
 		}
 
-        private static void RegisterHttpServerRoutes(HttpServer httpServer)
+        private static void RegisterHttpServerRoutes(HttpServer httpServer, int webSocketPort)
         {
             httpServer.On("/", "text/plain", (request, match) => {
                 return "Hello!";
@@ -43,7 +44,8 @@ namespace CodeGoat.Server
 
             httpServer.On("/room/(.+)", "text/html", (request, match) => {
                 return File.ReadAllText("html/room.html")
-                    .Replace("%RoomId%", match.Groups[1].Value);
+                    .Replace("%RoomId%", match.Groups[1].Value)
+                    .Replace("%WebSocketPort%", webSocketPort.ToString());
             });
 
             httpServer.On("/js/(.+)", "application/javascript", (request, match) => {
@@ -53,13 +55,6 @@ namespace CodeGoat.Server
             httpServer.On("/css/(.+)", "text/css", (request, match) => {
                 return File.ReadAllText("." + match.Groups[0].Value);
             });
-        }
-
-        private static void HandleWebSocketServerConnection(IWebSocketConnection connection)
-        {
-            connection.OnOpen = () => Console.WriteLine("Open!");
-            connection.OnClose = () => Console.WriteLine("Close!");
-            connection.OnMessage = message => connection.Send("Server echoes: " + message);
         }
 	}
 }
