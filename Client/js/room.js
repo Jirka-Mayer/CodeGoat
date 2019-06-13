@@ -1,81 +1,169 @@
-const CodeMirror = require("codemirror/lib/codemirror.js")
-require("codemirror/mode/javascript/javascript.js")
-require("codemirror/addon/edit/matchbrackets.js")
-require("codemirror/addon/edit/closebrackets.js")
+const Editor = require("./editor.js")
 
-require("codemirror/lib/codemirror.css")
-
-let editor = CodeMirror(document.querySelector("#editor"), {
-    lineNumbers: true,
-    mode: { name: "javascript" },
-    indentUnit: 4,
-    indentWithTabs: false,
-    viewportMargin: Infinity,
-    autoCloseBrackets: true,
-    matchBrackets: true,
-    showCursorWhenSelecting: true
-})
-
-editor.on("change", (instance, change) => {
-    console.log(change)
-
-    if (!window.socket)
-        return
-
-    if (window.socket.readyState == window.socket.OPEN)
+/**
+ * Main controller for the web page
+ */
+class MainController
+{
+    constructor()
     {
-        window.socket.send(JSON.stringify({
+        /**
+         * The text editor
+         */
+        this.editor = new Editor("#editor")
+
+        /**
+         * The web socket connection
+         */
+        this.socket = new WebSocket("ws://" + window.location.hostname + ":" + CodeGoatConfig.webSocketPort)
+        
+        /**
+         * Is the socket connected and we are inside a room?
+         */
+        this.isConnected = false
+
+        this.editor.registerOnChangeListener(this.onEditorChange.bind(this))
+        this.socket.addEventListener("open", (e) => this.onSocketOpen())
+        this.socket.addEventListener("close", (e) => this.onSocketClose())
+        this.socket.addEventListener("error", this.onSocketError.bind(this))
+        this.socket.addEventListener("message", (e) => this.onSocketMessage(JSON.parse(e.data)))
+    }
+
+    onSocketOpen()
+    {
+        console.log("Socket openned.")
+
+        this.socket.send(JSON.stringify({
+            type: "join-room",
+            room: CodeGoatConfig.roomId
+        }))
+    }
+
+    onSocketClose()
+    {
+        this.isConnected = false
+
+        console.log("Socket has been closed.")
+    }
+
+    onSocketError(e)
+    {
+        this.isConnected = false
+
+        alert("WebSocket connection failed...")
+        console.error(e)
+    }
+
+    onSocketMessage(message)
+    {
+        switch (message.type)
+        {
+            case "document-state":
+                if (message.initial)
+                {
+                    console.log("Room has been joined.")
+                    
+                    this.setupInitialDocument(message.document)
+                    this.isConnected = true // now we are inside a room
+                }
+                else
+                {
+                    console.log("Received document state broadcast.")
+
+                    this.handleDocumentStateBroadcast(message.document)
+                }
+                break
+
+            case "change-broadcast":
+                if (message.familiar)
+                    this.familiarChangeBroadcastReceived(message.change)
+                else
+                    this.foreignChangeBroadcastReceived(message.change)
+                break
+
+            default:
+                console.error("Server sent message that wasn't understood:", message)
+                break
+        }
+        
+        console.log("Received:", message)
+    }
+
+    /**
+     * Setup the document content right after the connection succeeded
+     */
+    setupInitialDocument(content)
+    {
+        this.editor.cm.replaceRange(
+            content,
+            {line: 0, ch: 0},
+            {line: this.editor.cm.lineCount(), ch: null},
+            "*server"
+        )
+        this.editor.cm.clearHistory()
+    }
+
+    /**
+     * Update document state
+     * We received a document state broadcast to fix any possible errors that might have accumulated
+     */
+    handleDocumentStateBroadcast(content)
+    {
+        if (content == this.editor.cm.getValue())
+            return
+
+        this.editor.cm.replaceRange(
+            content,
+            {line: 0, ch: 0},
+            {line: this.editor.cm.lineCount(), ch: null},
+            "*server"
+        )
+
+        console.warn("Document state broadcast has made some changes.")
+    }
+
+    /**
+     * Change broadcast by some foreign client has been received
+     * (it's not our change so it's foreign)
+     */
+    foreignChangeBroadcastReceived(change)
+    {
+        this.editor.cm.replaceRange(
+            change.text.join("\n"),
+            change.from,
+            change.to,
+            "*server"
+        )
+    }
+
+    /**
+     * Change broadcast has been received that we have initiated in the past
+     * (so the change is familiar since we initiated it)
+     */
+    familiarChangeBroadcastReceived(change)
+    {
+        
+    }
+
+    /**
+     * Called when the text editor change event fires
+     */
+    onEditorChange(change)
+    {
+        console.log("Change:", change)
+
+        if (!this.isConnected)
+            return
+
+        if (change.origin.match(/server$/))
+            return
+    
+        this.socket.send(JSON.stringify({
             type: "change",
             change: change
         }))
     }
-})
+}
 
-window.editor = editor
-
-
-
-
-
-let socket = new WebSocket("ws://" + window.location.hostname + ":" + CodeGoatConfig.webSocketPort)
-window.socket = socket
-
-socket.addEventListener("open", (e) => {
-    editor.setValue(editor.getValue() + "Socket open.\n")
-
-    let message = {
-        type: "join-room",
-        room: CodeGoatConfig.roomId
-    }
-
-    socket.send(JSON.stringify(message))
-});
-
-socket.addEventListener("message", (e) => {
-    
-    let message = JSON.parse(e.data)
-    
-    switch (message.type)
-    {
-        case "document-state":
-            editor.setValue(message.document)
-            if (message.initial)
-                editor.clearHistory()
-            break
-
-        default:
-            editor.setValue(editor.getValue() + "Server sent: " + e.data + "\n")
-            break
-    }
-    
-    console.log(message)
-});
-
-socket.addEventListener("error", (e) => {
-    alert("WebSocket connection failed...")
-    console.error(e)
-});
-
-socket.addEventListener("close", (e) => {
-    editor.setValue(editor.getValue() + "Socket closed.\n")
-});
+// MAIN
+window.mainController = new MainController()

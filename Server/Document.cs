@@ -17,7 +17,7 @@ namespace CodeGoat.Server
 
         public Document()
         {
-            lines.Add("");
+            lines.Add("This is the line in the document!");
         }
 
         /// <summary>

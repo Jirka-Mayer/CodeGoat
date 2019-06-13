@@ -76,10 +76,41 @@ namespace CodeGoat.Server
         /// </summary>
         public void OnClientSentMessage(Client client, JsonObject message)
         {
-            Console.WriteLine($"Client {client.Id} sent message to the room '{Id}': {message}.");
+            switch (message["type"].AsString)
+            {
+                case "change":
+                    ChangeReceived(client, message["change"].AsJsonObject);
+                    break;
 
-            // edit document
-            // broadcast operation to all clients
+                default:
+                    Console.WriteLine(
+                        $"Client {client.Id} sent message {message} to the room '{Id}' and it wasn't understood."
+                    );
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Change message was received
+        /// (Some client changed his document, now we need to broadcast the change to others)
+        /// </summary>
+        private void ChangeReceived(Client from, JsonObject change)
+        {
+            lock (syncLock)
+            {
+                // TODO: edit document
+
+                // broadcast change
+                foreach (Client client in clients)
+                {
+                    client.Send(
+                        new JsonObject()
+                            .Add("type", "change-broadcast")
+                            .Add("familiar", client == from)
+                            .Add("change", change)
+                    );
+                }
+            }
         }
     }
 }
