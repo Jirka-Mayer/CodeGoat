@@ -30,6 +30,13 @@ class Editor
             listener(change)
         })
     }
+
+    registerOnSelectionListener(listener)
+    {
+        this.cm.on("beforeSelectionChange", (instance, selection) => {
+            listener(selection)
+        })
+    }
 }
 
 module.exports = Editor

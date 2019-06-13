@@ -1,4 +1,6 @@
 const Editor = require("./editor.js")
+const invertChange = require("./invertChange.js")
+const changesEqual = require("./changesEqual.js")
 
 /**
  * Main controller for the web page
@@ -22,7 +24,15 @@ class MainController
          */
         this.isConnected = false
 
+        /**
+         * List of speculative changes
+         * The oldest changes are first, newest last
+         */
+        this.speculativeChanges = []
+
         this.editor.registerOnChangeListener(this.onEditorChange.bind(this))
+        this.editor.registerOnSelectionListener(this.onEditorSelection.bind(this))
+        
         this.socket.addEventListener("open", (e) => this.onSocketOpen())
         this.socket.addEventListener("close", (e) => this.onSocketClose())
         this.socket.addEventListener("error", this.onSocketError.bind(this))
@@ -94,12 +104,15 @@ class MainController
      */
     setupInitialDocument(content)
     {
+        this.speculativeChanges = []
+
         this.editor.cm.replaceRange(
             content,
             {line: 0, ch: 0},
             {line: this.editor.cm.lineCount(), ch: null},
             "*server"
         )
+
         this.editor.cm.clearHistory()
     }
 
@@ -109,17 +122,19 @@ class MainController
      */
     handleDocumentStateBroadcast(content)
     {
-        if (content == this.editor.cm.getValue())
-            return
+        this.speculativeChanges = []
 
-        this.editor.cm.replaceRange(
-            content,
-            {line: 0, ch: 0},
-            {line: this.editor.cm.lineCount(), ch: null},
-            "*server"
-        )
+        if (content != this.editor.cm.getValue())
+        {
+            this.editor.cm.replaceRange(
+                content,
+                {line: 0, ch: 0},
+                {line: this.editor.cm.lineCount(), ch: null},
+                "*server"
+            )
 
-        console.warn("Document state broadcast has made some changes.")
+            console.warn("Document state broadcast has made some changes.")
+        }
     }
 
     /**
@@ -128,12 +143,26 @@ class MainController
      */
     foreignChangeBroadcastReceived(change)
     {
-        this.editor.cm.replaceRange(
-            change.text.join("\n"),
-            change.from,
-            change.to,
-            "*server"
-        )
+        // rollback speculative changes
+        for (let i = this.speculativeChanges.length - 1; i >= 0; i--)
+        {
+            this.applyChange(
+                invertChange(this.speculativeChanges[i]),
+                "*server"
+            )
+        }
+
+        // apply foreign change
+        this.applyChange(change, "*server")
+
+        // re-apply speculative changes
+        for (let i = 0; i < this.speculativeChanges.length; i++)
+        {
+            this.applyChange(
+                this.speculativeChanges[i],
+                "*server"
+            )
+        }
     }
 
     /**
@@ -142,7 +171,44 @@ class MainController
      */
     familiarChangeBroadcastReceived(change)
     {
-        
+        if (this.speculativeChanges.length == 0)
+        {
+            console.warn("No speculative changes yet we received a familiar change.")
+            console.warn("Maybe document broadcast happened? Applying the change.")
+            this.foreignChangeBroadcastReceived(change)
+            return
+        }
+
+        if (!changesEqual(change, this.speculativeChanges[0]))
+        {
+            console.error("Received familiar change that is not the first speculative one.")
+            console.error("Last speculative:", this.speculativeChanges[0])
+            console.error("Received change:", change)
+            this.requestDocumentBroadcast()
+            return
+        }
+
+        // the change is not speculative anymore
+        this.speculativeChanges.splice(0, 1)
+    }
+
+    /**
+     * Applies a change object to the editor on behalf some origin
+     */
+    applyChange(change, origin)
+    {
+        if (this.editor.cm.getRange(change.from, change.to) != change.removed.join("\n"))
+        {
+            console.warn("Applying a change that removed different text at source client than is being removed now.")
+            this.requestDocumentBroadcast()
+        }
+
+        this.editor.cm.replaceRange(
+            change.text.join("\n"),
+            change.from,
+            change.to,
+            origin
+        )
     }
 
     /**
@@ -158,10 +224,39 @@ class MainController
         if (change.origin.match(/server$/))
             return
     
+        this.speculativeChanges.push(change)
         this.socket.send(JSON.stringify({
             type: "change",
             change: change
         }))
+    }
+
+    /**
+     * Called when the editor selection changes
+     */
+    onEditorSelection(selection)
+    {
+        // TODO
+
+        //console.log(selection)
+    }
+
+    /**
+     * Request a document broadcast, because something is going off the rails
+     */
+    requestDocumentBroadcast()
+    {
+        console.warn("Requesting document broadcast.")
+
+        // TODO
+    }
+
+    /**
+     * Call this from the console to run the editor-dependant javascript tests
+     */
+    runTests()
+    {
+        require("./roomTests.js")(this)
     }
 }
 
