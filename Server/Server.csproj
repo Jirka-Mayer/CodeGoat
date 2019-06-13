@@ -43,6 +43,7 @@
     <Compile Include="EditorServer.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Room.cs" />
+    <Compile Include="Document.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">

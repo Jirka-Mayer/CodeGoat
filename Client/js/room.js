@@ -18,8 +18,20 @@ let editor = CodeMirror(document.querySelector("#editor"), {
 
 editor.on("change", (instance, change) => {
     console.log(change)
+
+    if (!window.socket)
+        return
+
+    if (window.socket.readyState == window.socket.OPEN)
+    {
+        window.socket.send(JSON.stringify({
+            type: "change",
+            change: change
+        }))
+    }
 })
 
+window.editor = editor
 
 
 
@@ -35,13 +47,28 @@ socket.addEventListener("open", (e) => {
         type: "join-room",
         room: CodeGoatConfig.roomId
     }
-    
-    socket.send(JSON.stringify(message));
+
+    socket.send(JSON.stringify(message))
 });
 
 socket.addEventListener("message", (e) => {
-    editor.setValue(editor.getValue() + "Server sent: " + e.data + "\n")
-    //console.log(JSON.parse(e.data))
+    
+    let message = JSON.parse(e.data)
+    
+    switch (message.type)
+    {
+        case "document-state":
+            editor.setValue(message.document)
+            if (message.initial)
+                editor.clearHistory()
+            break
+
+        default:
+            editor.setValue(editor.getValue() + "Server sent: " + e.data + "\n")
+            break
+    }
+    
+    console.log(message)
 });
 
 socket.addEventListener("error", (e) => {

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using LightJson;
 
 namespace CodeGoat.Server
 {
     /// <summary>
-    /// A single file that people colaborate on
+    /// A single file that people collaborate on
     /// </summary>
     public class Room
     {
@@ -12,6 +13,23 @@ namespace CodeGoat.Server
         /// Room identifier
         /// </summary>
         public string Id { get; private set; }
+
+        /// <summary>
+        /// Lock for synchronizing critical actions
+        /// - document editing
+        /// - client addition / removal
+        /// </summary>
+        private object syncLock = new object();
+
+        /// <summary>
+        /// The underlying text document
+        /// </summary>
+        private Document document = new Document();
+
+        /// <summary>
+        /// Clients connected to the room
+        /// </summary>
+        private List<Client> clients = new List<Client>();
 
         public Room(string id)
         {
@@ -24,6 +42,21 @@ namespace CodeGoat.Server
         public void OnClientJoined(Client client)
         {
             Console.WriteLine($"Client {client.Id} joined the room '{Id}'.");
+
+            lock (syncLock)
+            {
+                if (clients.Contains(client))
+                    throw new ArgumentException("The client has already joined the room.");
+                
+                clients.Add(client);
+
+                client.Send(
+                    new JsonObject()
+                        .Add("type", "document-state")
+                        .Add("document", document.GetText())
+                        .Add("initial", true)
+                );
+            }
         }
 
         /// <summary>
@@ -32,6 +65,9 @@ namespace CodeGoat.Server
         public void OnClientLeft(Client client)
         {
             Console.WriteLine($"Client {client.Id} left the room '{Id}'.");
+
+            lock (syncLock)
+                clients.Remove(client);
         }
 
         /// <summary>
@@ -41,6 +77,9 @@ namespace CodeGoat.Server
         public void OnClientSentMessage(Client client, JsonObject message)
         {
             Console.WriteLine($"Client {client.Id} sent message to the room '{Id}': {message}.");
+
+            // edit document
+            // broadcast operation to all clients
         }
     }
 }
