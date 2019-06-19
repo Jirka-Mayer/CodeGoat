@@ -7,8 +7,14 @@ const changesEqual = require("./changesEqual.js")
  */
 class MainController
 {
-    constructor()
+    constructor(debug)
     {
+        /**
+         * Are we in debug mode?
+         * So log every single minor thing
+         */
+        this.DEBUG = !!debug;
+
         /**
          * The text editor
          */
@@ -41,7 +47,8 @@ class MainController
 
     onSocketOpen()
     {
-        console.log("Socket openned.")
+        if (this.DEBUG)
+            console.log("Socket openned.")
 
         this.socket.send(JSON.stringify({
             type: "join-room",
@@ -53,7 +60,8 @@ class MainController
     {
         this.isConnected = false
 
-        console.log("Socket has been closed.")
+        if (this.DEBUG)
+            console.log("Socket has been closed.")
     }
 
     onSocketError(e)
@@ -66,20 +74,22 @@ class MainController
 
     onSocketMessage(message)
     {
+        if (this.DEBUG)
+            console.log("Received message:", message)
+
         switch (message.type)
         {
             case "document-state":
                 if (message.initial)
                 {
-                    console.log("Room has been joined.")
+                    if (this.DEBUG)
+                        console.log("Room has been joined.")
                     
                     this.setupInitialDocument(message.document)
                     this.isConnected = true // now we are inside a room
                 }
                 else
                 {
-                    console.log("Received document state broadcast.")
-
                     this.handleDocumentStateBroadcast(message.document)
                 }
                 break
@@ -95,8 +105,6 @@ class MainController
                 console.error("Server sent message that wasn't understood:", message)
                 break
         }
-        
-        console.log("Received:", message)
     }
 
     /**
@@ -122,6 +130,9 @@ class MainController
      */
     handleDocumentStateBroadcast(content)
     {
+        if (this.DEBUG)
+            console.log("Received document state broadcast.")
+
         this.speculativeChanges = []
 
         if (content != this.editor.cm.getValue())
@@ -216,7 +227,8 @@ class MainController
      */
     onEditorChange(change)
     {
-        console.log("Change:", change)
+        if (this.DEBUG)
+            console.log("Editor change:", change)
 
         if (!this.isConnected)
             return
@@ -236,9 +248,10 @@ class MainController
      */
     onEditorSelection(selection)
     {
-        // TODO
+        if (this.DEBUG)
+            console.log("Selection change:", selection)
 
-        //console.log(selection)
+        // TODO
     }
 
     /**
@@ -263,4 +276,4 @@ class MainController
 }
 
 // MAIN
-window.mainController = new MainController()
+window.mainController = new MainController(true)
