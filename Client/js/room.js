@@ -42,6 +42,28 @@ class MainController
          */
         this.selectionMarkers = {}
 
+        /**
+         * Field with this client's name
+         */
+        this.nameField = document.querySelector("#your-name")
+
+        /**
+         * List of other clients
+         * {
+         *      id: 45,
+         *      color: "#456",
+         *      name: "John"
+         * }
+         */
+        this.otherClients = []
+
+        /**
+         * List with other clients
+         */
+        this.otherClientsList = document.querySelector("#other-clients")
+
+        this.nameField.addEventListener("change", this.onNameChange.bind(this))
+
         this.editor.registerOnChangeListener(this.onEditorChange.bind(this))
         this.editor.registerOnSelectionListener(this.onEditorSelection.bind(this))
         
@@ -93,6 +115,8 @@ class MainController
                     
                     this.setupInitialDocument(message.document)
                     this.isConnected = true // now we are inside a room
+
+                    this.onNameChange() // broadcast name
                 }
                 else
                 {
@@ -109,6 +133,33 @@ class MainController
 
             case "selection-broadcast":
                 this.handleSelectionBroadcast(message.clientId, message.selection)
+                break
+
+            case "client-update":
+                let client = this.getOrCreateClient(message.clientId)
+                client.name = message.name
+                client.color = message.color
+                this.updateOtherClientsUI()
+                break
+
+            case "client-left":
+                for (let i = 0; i < this.otherClients.length; i++)
+                {
+                    if (this.otherClients[i].id == message.clientId)
+                    {
+                        // remove from client list
+                        this.otherClients.splice(i, 1)
+
+                        // clear selection markers
+                        if (!this.selectionMarkers[message.clientId])
+                            this.selectionMarkers[message.clientId] = []
+                        for (let i = 0; i < this.selectionMarkers[message.clientId].length; i++)
+                            this.selectionMarkers[message.clientId][i].clear()
+
+                        break
+                    }
+                }
+                this.updateOtherClientsUI()
                 break
 
             default:
@@ -238,6 +289,8 @@ class MainController
      */
     handleSelectionBroadcast(clientId, selection)
     {
+        let client = this.getOrCreateClient(clientId)
+
         // clear old markers
 
         if (!this.selectionMarkers[clientId])
@@ -266,7 +319,7 @@ class MainController
                 let elem = document.createElement("span")
                 elem.style.borderLeftStyle = 'solid'
                 elem.style.borderLeftWidth = '2px'
-                elem.style.borderLeftColor = 'tomato'
+                elem.style.borderLeftColor = client.color
                 elem.style.height = (cursorCoords.bottom - cursorCoords.top) + "px"
                 elem.style.padding = 0
                 elem.style.marginLeft = "-2px"
@@ -283,7 +336,7 @@ class MainController
                 let marker = this.editor.cm.markText(from, to, {
                     inclusiveRight: true,
                     inclusiveLeft: false,
-                    css: `background: tomato`
+                    css: `background: ${client.color}`
                 })
                 
                 this.selectionMarkers[clientId].push(marker)
@@ -344,6 +397,59 @@ class MainController
         this.socket.send(JSON.stringify({
             type: "request-document-broadcast"
         }))
+    }
+
+    /**
+     * When this client's name changes
+     */
+    onNameChange()
+    {
+        if (!this.isConnected)
+            return
+
+        this.socket.send(JSON.stringify({
+            type: "name-changed",
+            name: this.nameField.value
+        }))
+    }
+
+    getOrCreateClient(clientId)
+    {
+        for (let i = 0; i < this.otherClients.length; i++)
+        {
+            if (this.otherClients[i].id == clientId)
+                return this.otherClients[i]
+        }
+
+        let client = {
+            id: clientId,
+            color: "black",
+            name: "anonymous"
+        }
+
+        this.otherClients.push(client)
+
+        return client
+    }
+
+    updateOtherClientsUI()
+    {
+        let html = ""
+
+        for (let i = 0; i < this.otherClients.length; i++)
+        {
+            html += `
+                <li>
+                    <span
+                        class="color-disc"
+                        style="background: ${this.otherClients[i].color}">
+                    </span>
+                    ${this.otherClients[i].name}
+                </li>
+            `;
+        }
+
+        this.otherClientsList.innerHTML = html
     }
 
     /**

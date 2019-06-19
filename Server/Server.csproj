@@ -46,6 +46,7 @@
     <Compile Include="Document.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Change.cs" />
+    <Compile Include="ColorGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">

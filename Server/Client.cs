@@ -22,6 +22,35 @@ namespace CodeGoat.Server
         public int Id => connection.ConnectionInfo.ClientPort;
 
         /// <summary>
+        /// Client's name
+        /// </summary>
+        private string name;
+        public string Name
+        {
+            get => name;
+            
+            /// <summary>
+            /// Call only from inside the Room when having a sync lock obtained
+            /// to prevent reading Name by other thread while writing
+            /// </summary>
+            set
+            {
+                if (String.IsNullOrEmpty(value))
+                    name = "anonymous";
+                else
+                    name = value;
+            }
+        }
+
+        /// <summary>
+        /// Client's color
+        /// 
+        /// Set only from inside the Room when having a sync lock obtained
+        /// to prevent reading Color by other thread while writing
+        /// </summary>
+        public string Color { get; set; }
+
+        /// <summary>
         /// Room this client belongs to
         /// 
         /// Accessed from multiple threads so it needs to be locked (by the roomLock)
