@@ -17,6 +17,8 @@ namespace CodeGoat.Server
             // disable fleck logging
             FleckLog.LogAction = (level, message, ex) => {
                 // nothing
+                //Console.WriteLine(message);
+                //Console.WriteLine(ex);
             };
 
             var editorServer = new EditorServer();
