@@ -53,9 +53,12 @@ namespace CodeGoat.Server
         }
 
         public static readonly string[] StandatdPalette = new string[] {
-            "tomato",
-            "lime",
-            "navy"
+            "#c3c3f3", // blue
+            "#c6f3c3", // green
+            "#f3c7c3", // red
+            "#f2f3c3", // yellow
+            "#c6f3c3", // cyan
+            "#f3c3de" // purple
         };
     }
 }
