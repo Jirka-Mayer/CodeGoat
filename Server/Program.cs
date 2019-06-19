@@ -39,8 +39,8 @@ namespace CodeGoat.Server
 
         private static void RegisterHttpServerRoutes(HttpServer httpServer, int webSocketPort)
         {
-            httpServer.On("/", "text/plain", (request, match) => {
-                return "Hello!";
+            httpServer.On("/", "text/html", (request, match) => {
+                return File.ReadAllText("html/index.html");
             });
 
             httpServer.On("/room/(.+)", "text/html", (request, match) => {

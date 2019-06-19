@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+
+    <title>Code goat, an online text editor</title>
+
+    <style>
+        body {
+            width: 90%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-top: 50px;
+
+            font-family: sans-serif;
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>Code goat</h1>
+    <p>An online code editor shared between people.</p>
+    
+    <h3>Enter a room</h3>
+    <p>Public rooms to participate in:</p>
+    <ul>
+        <li><a href="/room/kirk">Kirk</a></li>
+        <li><a href="/room/picard">Picard</a></li>
+        <li><a href="/room/janeway">Janeway</a></li>
+    </ul>
+    <p>Give me a random room, I need privacy: <button onclick="gotoRandomRoom()">Go!</button></p>
+
+    <script>
+        function gotoRandomRoom()
+        {
+            var room = Math.random().toString(36).substring(7)
+            window.location.href = "/room/" + room
+        }
+    </script>
+    
+</body>
+</html>
