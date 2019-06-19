@@ -82,6 +82,10 @@ namespace CodeGoat.Server
                     ChangeReceived(client, message["change"].AsJsonObject);
                     break;
 
+                case "selection-change":
+                    SelectionChangeReceived(client, message["selection"].AsJsonObject);
+                    break;
+
                 case "request-document-broadcast":
                     BroadcastDocumentState();
                     break;
@@ -115,6 +119,28 @@ namespace CodeGoat.Server
                             .Add("type", "change-broadcast")
                             .Add("familiar", client == from)
                             .Add("change", change)
+                    );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Selection change message received
+        /// Needs to be broadcasted to others
+        /// </summary>
+        private void SelectionChangeReceived(Client from, JsonObject selection)
+        {
+            lock (syncLock)
+            {
+                foreach (Client client in clients)
+                {
+                    if (client == from)
+                        continue;
+
+                    client.Send(
+                        new JsonObject()
+                            .Add("type", "selection-broadcast")
+                            .Add("selection", selection)
                     );
                 }
             }
