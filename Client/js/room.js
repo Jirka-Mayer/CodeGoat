@@ -1,6 +1,7 @@
 const Editor = require("./editor.js")
 const invertChange = require("./invertChange.js")
 const changesEqual = require("./changesEqual.js")
+const orderPositions = require("./orderPositions.js")
 
 /**
  * Main controller for the web page
@@ -35,6 +36,11 @@ class MainController
          * The oldest changes are first, newest last
          */
         this.speculativeChanges = []
+
+        /**
+         * For each client id there's a list of markers defining their selection
+         */
+        this.selectionMarkers = {}
 
         this.editor.registerOnChangeListener(this.onEditorChange.bind(this))
         this.editor.registerOnSelectionListener(this.onEditorSelection.bind(this))
@@ -99,6 +105,10 @@ class MainController
                     this.familiarChangeBroadcastReceived(message.change)
                 else
                     this.foreignChangeBroadcastReceived(message.change)
+                break
+
+            case "selection-broadcast":
+                this.handleSelectionBroadcast(message.clientId, message.selection)
                 break
 
             default:
@@ -223,6 +233,65 @@ class MainController
     }
 
     /**
+     * Called when a selection broadcast is received
+     * (someone else changed their selection)
+     */
+    handleSelectionBroadcast(clientId, selection)
+    {
+        // clear old markers
+
+        if (!this.selectionMarkers[clientId])
+            this.selectionMarkers[clientId] = []
+
+        for (let i = 0; i < this.selectionMarkers[clientId].length; i++)
+            this.selectionMarkers[clientId][i].clear()
+
+        this.selectionMarkers[clientId] = []
+
+        // insert new markers
+
+        for (let i = 0; i < selection.ranges.length; i++)
+        {
+            let range = selection.ranges[i];
+
+            let orderedRange = orderPositions(range.head, range.anchor)
+            let from = orderedRange[0]
+            let to = orderedRange[1]
+
+            if (from.line == to.line && from.ch == to.ch)
+            {
+                // Caret
+
+                let cursorCoords = this.editor.cm.cursorCoords(from)
+                let elem = document.createElement("span")
+                elem.style.borderLeftStyle = 'solid'
+                elem.style.borderLeftWidth = '2px'
+                elem.style.borderLeftColor = 'tomato'
+                elem.style.height = (cursorCoords.bottom - cursorCoords.top) + "px"
+                elem.style.padding = 0
+                elem.style.marginLeft = "-2px"
+                elem.style.zIndex = 0
+
+                let marker = this.editor.cm.setBookmark(from, { widget: elem })
+
+                this.selectionMarkers[clientId].push(marker)
+            }
+            else
+            {
+                // Selection
+
+                let marker = this.editor.cm.markText(from, to, {
+                    inclusiveRight: true,
+                    inclusiveLeft: false,
+                    css: `background: tomato`
+                })
+                
+                this.selectionMarkers[clientId].push(marker)
+            }
+        }
+    }
+
+    /**
      * Called when the text editor change event fires
      */
     onEditorChange(change)
@@ -241,6 +310,14 @@ class MainController
             type: "change",
             change: change
         }))
+
+        // selection
+        this.socket.send(JSON.stringify({
+            type: "selection-change",
+            selection: {
+                ranges: this.editor.cm.listSelections()
+            }
+        }))
     }
 
     /**
@@ -251,7 +328,10 @@ class MainController
         if (this.DEBUG)
             console.log("Selection change:", selection)
 
-        // TODO
+        this.socket.send(JSON.stringify({
+            type: "selection-change",
+            selection: selection
+        }))
     }
 
     /**

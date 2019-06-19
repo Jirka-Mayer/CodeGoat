@@ -31,6 +31,7 @@ namespace CodeGoat.Server
             Console.WriteLine($"Http server running at port { httpPort }...");
             Console.WriteLine($"Web socket server running at port { webSocketPort }...");
 			Console.WriteLine("Press a key to quit.");
+            Console.WriteLine("");
 			Console.ReadKey();
 
             httpServer.Stop();
