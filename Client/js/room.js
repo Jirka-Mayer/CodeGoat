@@ -14,7 +14,7 @@ class MainController
          * Are we in debug mode?
          * So log every single minor thing
          */
-        this.DEBUG = !!debug;
+        this.DEBUG = debug; // false | true | verbose
 
         /**
          * The text editor
@@ -102,7 +102,7 @@ class MainController
 
     onSocketMessage(message)
     {
-        if (this.DEBUG)
+        if (this.DEBUG === "verbose")
             console.log("Received message:", message)
 
         switch (message.type)
@@ -183,6 +183,8 @@ class MainController
         )
 
         this.editor.cm.clearHistory()
+
+        this.editor.cm.setCursor(0, 0)
     }
 
     /**
@@ -198,12 +200,16 @@ class MainController
 
         if (content != this.editor.cm.getValue())
         {
+            let ranges = this.editor.cm.listSelections()
+
             this.editor.cm.replaceRange(
                 content,
                 {line: 0, ch: 0},
                 {line: this.editor.cm.lineCount(), ch: null},
                 "*server"
             )
+
+            this.editor.cm.setSelections(ranges)
 
             console.warn("Document state broadcast has made some changes.")
         }
@@ -349,7 +355,7 @@ class MainController
      */
     onEditorChange(change)
     {
-        if (this.DEBUG)
+        if (this.DEBUG === "verbose")
             console.log("Editor change:", change)
 
         if (!this.isConnected)
@@ -378,7 +384,7 @@ class MainController
      */
     onEditorSelection(selection)
     {
-        if (this.DEBUG)
+        if (this.DEBUG === "verbose")
             console.log("Selection change:", selection)
 
         this.socket.send(JSON.stringify({

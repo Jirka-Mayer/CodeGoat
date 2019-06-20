@@ -14,11 +14,18 @@ namespace CodeGoat.Server
             int httpPort = 8080;
             int webSocketPort = 8181;
 
-            // disable fleck logging
+            // setup fleck logging
             FleckLog.LogAction = (level, message, ex) => {
-                // nothing
-                //Console.WriteLine(message);
-                //Console.WriteLine(ex);
+                switch(level) {
+                    case LogLevel.Error:
+                    case LogLevel.Warn:
+                        Console.WriteLine(message);
+                        Console.WriteLine(ex);
+                        break;
+                    default:
+                        // debug & info are not interesting
+                        break;
+                }
             };
 
             var editorServer = new EditorServer();
@@ -28,15 +35,27 @@ namespace CodeGoat.Server
             RegisterHttpServerRoutes(httpServer, webSocketPort);
 
 			httpServer.Run();
+            editorServer.Start();
             webSocketServer.Start(editorServer.HandleNewConnection);
             
             Console.WriteLine($"Http server running at port { httpPort }...");
             Console.WriteLine($"Web socket server running at port { webSocketPort }...");
-			Console.WriteLine("Press a key to quit.");
+			Console.WriteLine("Type 'exit' to end the application.");
             Console.WriteLine("");
-			Console.ReadKey();
+			
+            while (true)
+            {
+                string command = Console.ReadLine();
+
+                if (command == "exit")
+                {
+                    Console.WriteLine("Stopping...");
+                    break;
+                }
+            }
 
             httpServer.Stop();
+            editorServer.Stop();
 		}
 
         private static void RegisterHttpServerRoutes(HttpServer httpServer, int webSocketPort)

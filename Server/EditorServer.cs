@@ -28,6 +28,32 @@ namespace CodeGoat.Server
         private Dictionary<string, Room> rooms = new Dictionary<string, Room>();
 
         /// <summary>
+        /// Triggers document state broadcasting
+        /// </summary>
+        private DocumentBroadcaster documentBroadcaster;
+
+        public EditorServer()
+        {
+            documentBroadcaster = new DocumentBroadcaster(BroadcastDocumentStates);
+        }
+
+        /// <summary>
+        /// Starts the server
+        /// </summary>
+        public void Start()
+        {
+            documentBroadcaster.Start();
+        }
+
+        /// <summary>
+        /// Stops the server
+        /// </summary>
+        public void Stop()
+        {
+            documentBroadcaster.Stop();
+        }
+
+        /// <summary>
         /// Handles a new incomming web socket connection
         /// 
         /// Runs inside some Fleck thread
@@ -70,6 +96,21 @@ namespace CodeGoat.Server
                 room = new Room(identifier);
                 rooms.Add(identifier, room);
                 return room;
+            }
+        }
+
+        /// <summary>
+        /// Sends current document state to all clients in all rooms,
+        /// called periodically
+        /// </summary>
+        private void BroadcastDocumentStates()
+        {
+            Console.WriteLine("Broadcasting document state.");
+
+            lock (rooms)
+            {
+                foreach (Room room in rooms.Values)
+                    room.BroadcastDocumentState();
             }
         }
     }
