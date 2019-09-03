@@ -1,6 +1,5 @@
 const Editor = require("./editor.js")
 const invertChange = require("./invertChange.js")
-const changesEqual = require("./changesEqual.js")
 const orderPositions = require("./orderPositions.js")
 const str_random = require("./str_random.js")
 
