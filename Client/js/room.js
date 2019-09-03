@@ -2,6 +2,7 @@ const Editor = require("./editor.js")
 const invertChange = require("./invertChange.js")
 const orderPositions = require("./orderPositions.js")
 const str_random = require("./str_random.js")
+const updateLocationByChange = require("./updateLocationByChange.js")
 
 /**
  * Main controller for the web page
@@ -258,8 +259,26 @@ class MainController
             // perform the change
             this.applyChange(change, origin)
 
-            // TODO: update locations of speculative changes
-            // ...
+            // update locations of speculative changes
+            for (let i = 0; i < this.speculativeChanges.length; i++)
+            {
+                this.speculativeChanges[i].from = updateLocationByChange(
+                    this.speculativeChanges[i].from,
+                    change
+                )
+
+                this.speculativeChanges[i].to = updateLocationByChange(
+                    this.speculativeChanges[i].to,
+                    change
+                )
+            }
+
+            // NOTE: "removed" property of the change should be updated as well.
+            // This is if the old change inserts some text into the middle of a speculative change.
+            // But it is not a common situation, because two people don't want to write over each other
+            // because it's difficult to keep track of for the human users.
+            // However if it was to happen, the only result is a triggering of document broadcast
+            // and a warning in the console. No inconsistency in the document gets created.
         })
     }
 

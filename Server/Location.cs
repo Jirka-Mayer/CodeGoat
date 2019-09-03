@@ -77,5 +77,87 @@ namespace CodeGoat.Server
                 .Add("ch", ch)
                 .Add("sticky", sticky == Stickiness.Before ? "before" : "after");
         }
+
+        /// <summary>
+        /// Tracks where a location in the document moves when a change is applied
+        /// </summary>
+        public Location UpdateByChange(Change change)
+        {
+            var ret = new Location(line, ch, sticky);
+
+            // location is before everything so it doesn't move
+            if (line < change.From.line)
+                return ret;
+            
+            if (line == change.From.line)
+            {
+                if (ch < change.From.ch)
+                    return ret;
+                
+                if (ch == change.From.ch && sticky == Stickiness.Before)
+                    return ret;
+            }
+
+            /////////////////
+            // Delete text //
+            /////////////////
+            
+            // location is inside the deleted region so move it to the "from" (keep stickiness)
+            if (
+                line < change.To.line || // inside by line
+                (line == change.To.line && (ch < change.To.ch || // or the same line but inside by char
+                    (ch == change.To.ch && sticky == Stickiness.Before) // or same char but inside by stickiness
+                ))
+            )
+            {
+                ret.line = change.From.line;
+                ret.ch = change.From.ch;
+            }
+
+            // location is after the deleted region
+            else
+            {
+                // if the location is on the last line of deletion, perform leftwise movement
+                if (ret.line == change.To.line)
+                {
+                    ret.ch -= change.To.ch - change.From.ch;
+                }
+
+                // move line up by the number of deleted lines
+                ret.line -= change.To.line - change.From.line;
+            }
+            
+            /////////////////
+            // Insert text //
+            /////////////////
+
+            // the case when location is before the edited region is already handled here
+            // so the location has to be after the region
+
+            // unless it was inside and is now sticking before
+            if (ret.line == change.From.line && ret.ch == change.From.ch && sticky == Stickiness.Before)
+                return ret;
+
+            // now it's after the inserted region so just perform the movement
+
+            // if the location is on the line of insertion, perform rightwise movement
+            if (ret.line == change.From.line)
+            {
+                // multiline
+                if (change.Text.Count > 1)
+                {
+                    ret.ch += change.Text[change.Text.Count - 1].Length - change.From.ch;
+                }
+                else // inline
+                {
+                    ret.ch += change.Text[change.Text.Count - 1].Length;
+                }
+            }
+
+            // move line down by the number of inserted lines
+            ret.line += change.Text.Count - 1;
+
+            return ret;
+        }
     }
 }
