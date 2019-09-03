@@ -149,7 +149,6 @@ namespace CodeGoat.Server
                     client.Send(
                         new JsonObject()
                             .Add("type", "change-broadcast")
-                            .Add("familiar", client == from)
                             .Add("change", change.ToCodemirrorJson())
                     );
                 }

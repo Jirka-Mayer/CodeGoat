@@ -184,12 +184,12 @@ Server posílá klientovi současný stav dokumentu. `initial` je `true`, pokud 
 ```js
 {
     "type": "change-broadcast",
-    "change": {...}, // change object returned by codemirror with an "id" field added
-    "familiar": false
+    "change": {...} // change object returned by codemirror with an "id" field added
 }
 ```
 
-Nějaký klient provedl změnu a server ji rozesílá ostatním. `familiar` je `true`, pokud tuto změnu provedl právě tento klient (ten co zprávu dostal). Potom totiž nemusí tuhle změnu považovat za spekulativní, protože o ní server ví. (tzn. nemá ji provést (protože už ji provedl), má si označit, že je hotová, commitnutá).
+Nějaký klient provedl změnu a server ji rozesílá ostatním. Pokud ID změny odpovídá nejstarší spekulativní změně,
+tak se změna na klientovi neprovede, protože ji klient už spekulativně provedl. Jen se odstraní ze seznamu spekulativních.
 
 
 **selection-broadcast**

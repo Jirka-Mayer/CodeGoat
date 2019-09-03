@@ -126,10 +126,33 @@ class MainController
                 break
 
             case "change-broadcast":
-                if (message.familiar)
-                    this.familiarChangeBroadcastReceived(message.change)
+                if (this.speculativeChanges.filter(x => x.id = message.change.id).length > 0)
+                {
+                    // this change is inside the speculative changes
+
+                    // is not the first on (error detection)
+                    if (this.speculativeChanges[0].id != message.change.id)
+                    {
+                        console.error("Received speculative change that is not the first one.")
+                        console.error("Speculative changes:", this.speculativeChanges)
+                        console.error("Received change:", message.change)
+                        
+                        // clear speculatives which will cause document broadcast to make changes
+                        // (and if not, then we've just fixed the problem)
+                        this.speculativeChanges = []
+                        this.requestDocumentBroadcast()
+                    }
+                    else
+                    {
+                        // the change is not speculative anymore
+                        this.speculativeChanges.splice(0, 1)
+                    }
+                }
                 else
-                    this.foreignChangeBroadcastReceived(message.change)
+                {
+                    // this change is a foreign one, apply it
+                    this.changeDocumentBeforeSpeculativeChanges(message.change, "*server")
+                }
                 break
 
             case "selection-broadcast":
@@ -197,70 +220,58 @@ class MainController
         if (this.DEBUG)
             console.log("Received document state broadcast.")
 
-        this.editDocumentWithoutSpeculativeChanges(() => {
-
+        // check document state
+        let documentDiffers = false
+        this.unrollSpeculativeChangesAndDo(() => {
             if (content != this.editor.cm.getValue())
-            {
-                let ranges = this.editor.cm.listSelections()
-
-                this.editor.cm.replaceRange(
-                    content,
-                    {line: 0, ch: 0},
-                    {line: this.editor.cm.lineCount(), ch: null},
-                    "*server"
-                )
-
-                this.editor.cm.setSelections(ranges)
-
-                console.warn("Document state broadcast has made some changes.")
-            }
-
+                documentDiffers = true
         })
+
+        // if something weird is happening
+        if (documentDiffers)
+        {
+            // update document state
+            let ranges = this.editor.cm.listSelections()
+            this.editor.cm.replaceRange(
+                content,
+                {line: 0, ch: 0},
+                {line: this.editor.cm.lineCount(), ch: null},
+                "*server"
+            )
+            this.editor.cm.setSelections(ranges)
+
+            // Remove all speculative changes.
+            // These changes have been sent already and will be received from the server and
+            // will seem like changes performed by other clients. But that's ok. Consistency is saved.
+            this.speculativeChanges = [] 
+
+            console.warn("Document state broadcast has made some changes.")
+        }
     }
 
     /**
-     * Change broadcast by some foreign client has been received
-     * (it's not our change so it's foreign)
+     * Performs document change with speculative changes unrolled
+     * Updates locations of speculative changes accordingly
      */
-    foreignChangeBroadcastReceived(change)
+    changeDocumentBeforeSpeculativeChanges(change, origin)
     {
-        this.editDocumentWithoutSpeculativeChanges(() => {
-            // apply foreign change
-            this.applyChange(change, "*server")
+        this.unrollSpeculativeChangesAndDo(() => {
+            // perform the change
+            this.applyChange(change, origin)
+
+            // TODO: update locations of speculative changes
+            // ...
         })
-    }
-
-    /**
-     * Change broadcast has been received that we have initiated in the past
-     * (so the change is familiar since we initiated it)
-     */
-    familiarChangeBroadcastReceived(change)
-    {
-        if (this.speculativeChanges.length == 0)
-        {
-            console.warn("No speculative changes yet we received a familiar change. Applying the change.")
-            this.foreignChangeBroadcastReceived(change)
-            return
-        }
-
-        if (!changesEqual(change, this.speculativeChanges[0]))
-        {
-            console.error("Received familiar change that is not the first speculative one.")
-            console.error("Last speculative:", this.speculativeChanges[0])
-            console.error("Received change:", change)
-            this.requestDocumentBroadcast()
-            return
-        }
-
-        // the change is not speculative anymore
-        this.speculativeChanges.splice(0, 1)
     }
 
     /**
      * Perform some actions on the document, but rollback speculative changes before
      * the action and re-apply them afterwards
+     * 
+     * If these actions modify the document, then locations of speculative changes have to be updated
+     * othrwise inconsistency gets created
      */
-    editDocumentWithoutSpeculativeChanges(editAction)
+    unrollSpeculativeChangesAndDo(action)
     {
         // rollback speculative changes
         for (let i = this.speculativeChanges.length - 1; i >= 0; i--)
@@ -271,8 +282,8 @@ class MainController
             )
         }
 
-        // perform the action
-        editAction()
+        // perform action
+        action()
 
         // re-apply speculative changes
         for (let i = 0; i < this.speculativeChanges.length; i++)
