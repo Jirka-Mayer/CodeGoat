@@ -292,8 +292,9 @@ class MainController
         if (this.editor.cm.getRange(change.from, change.to) != change.removed.join("\n"))
         {
             console.warn(
-                `Applying a change '${change["id"]}' that removed different ` +
-                `text at source client than is being removed now.`
+                `Applying a change that removed different ` +
+                `text at source client than is being removed now.`,
+                change
             )
             this.requestDocumentBroadcast()
         }

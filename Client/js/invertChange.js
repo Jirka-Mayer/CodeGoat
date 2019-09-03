@@ -4,6 +4,8 @@
 function invertChange(change)
 {
     return {
+        id: change.id,
+        invertedChange: true,
         from: change.from,
         to: {
             line: change.from.line + change.text.length - 1,
