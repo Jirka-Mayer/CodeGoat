@@ -55,8 +55,8 @@ namespace CodeGoat.Server
         /// </summary>
         public void ApplyChange(Change change)
         {
-            RemoveText(change.from, change.to);
-            InsertText(change.from, change.text);
+            RemoveText(change.From, change.To);
+            InsertText(change.From, change.Text.ToList());
         }
 
         private void RemoveText(Location from, Location to)

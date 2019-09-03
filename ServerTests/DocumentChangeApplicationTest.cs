@@ -14,7 +14,7 @@ namespace ServerTests
         {
             Document doc = new Document("");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 0},
                 ""to"": {""line"": 0, ""ch"": 0},
                 ""text"": [""Lorem ipsum.""],
@@ -31,7 +31,7 @@ namespace ServerTests
         {
             Document doc = new Document("");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 0},
                 ""to"": {""line"": 0, ""ch"": 0},
                 ""text"": [""Lorem"", ""ipsum""],
@@ -48,7 +48,7 @@ namespace ServerTests
         {
             Document doc = new Document("aaabbb");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 3},
                 ""to"": {""line"": 0, ""ch"": 3},
                 ""text"": [""ccc""],
@@ -65,7 +65,7 @@ namespace ServerTests
         {
             Document doc = new Document("\naaabbb\n");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 1, ""ch"": 3},
                 ""to"": {""line"": 1, ""ch"": 3},
                 ""text"": ["""", ""ccc"", """"],
@@ -82,7 +82,7 @@ namespace ServerTests
         {
             Document doc = new Document("Lorem\nipsum");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 5},
                 ""to"": {""line"": 1, ""ch"": 0},
                 ""text"": [""""],
@@ -99,7 +99,7 @@ namespace ServerTests
         {
             Document doc = new Document("aaacccbbb");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 3},
                 ""to"": {""line"": 0, ""ch"": 6},
                 ""text"": [""""],
@@ -116,7 +116,7 @@ namespace ServerTests
         {
             Document doc = new Document("aaaccc\ncccbbb");
 
-            Change change = Change.FromJsonObject(JsonReader.Parse(@"{
+            Change change = Change.FromCodemirrorJson(JsonReader.Parse(@"{
                 ""from"": {""line"": 0, ""ch"": 3},
                 ""to"": {""line"": 1, ""ch"": 3},
                 ""text"": [""""],

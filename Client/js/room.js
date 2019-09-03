@@ -2,6 +2,7 @@ const Editor = require("./editor.js")
 const invertChange = require("./invertChange.js")
 const changesEqual = require("./changesEqual.js")
 const orderPositions = require("./orderPositions.js")
+const str_random = require("./str_random.js")
 
 /**
  * Main controller for the web page
@@ -284,13 +285,16 @@ class MainController
     }
 
     /**
-     * Applies a change object to the editor on behalf some origin
+     * Applies a change object to the editor on behalf of some origin
      */
     applyChange(change, origin)
     {
         if (this.editor.cm.getRange(change.from, change.to) != change.removed.join("\n"))
         {
-            console.warn("Applying a change that removed different text at source client than is being removed now.")
+            console.warn(
+                `Applying a change '${change["id"]}' that removed different ` +
+                `text at source client than is being removed now.`
+            )
             this.requestDocumentBroadcast()
         }
 
@@ -368,14 +372,19 @@ class MainController
      */
     onEditorChange(change)
     {
-        if (this.DEBUG === "verbose")
-            console.log("Editor change:", change)
-
         if (!this.isConnected)
             return
 
         if (change.origin.match(/server$/))
             return
+
+        // assign an ID to the change so that it can be tracked though the system
+        // IDs are not handled by the codemirror, they are entirely a slapped on feature
+        change.id = str_random(16)
+
+        // debug log
+        if (this.DEBUG === "verbose")
+            console.log("Editor change:", change)
     
         this.speculativeChanges.push(change)
         this.socket.send(JSON.stringify({

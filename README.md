@@ -121,7 +121,7 @@ Klient se právě připojil a tohle je jeho první zpráva. Ohlašuje, že je v 
 ```js
 {
     "type": "change",
-    "change": {...}         // change object returned by codemirror
+    "change": {...} // change object returned by codemirror with an "id" field added
 }
 ```
 
@@ -184,7 +184,7 @@ Server posílá klientovi současný stav dokumentu. `initial` je `true`, pokud 
 ```js
 {
     "type": "change-broadcast",
-    "change": {...},                    // change object returned by codemirror
+    "change": {...}, // change object returned by codemirror with an "id" field added
     "familiar": false
 }
 ```
@@ -197,7 +197,7 @@ Nějaký klient provedl změnu a server ji rozesílá ostatním. `familiar` je `
 ```js
 {
     "type": "selection-broadcast",
-    "selection": {...},                    // selection object returned by codemirror
+    "selection": {...}, // selection object returned by codemirror
     "clientId": 42
 }
 ```

@@ -129,16 +129,19 @@ namespace CodeGoat.Server
 
         /// <summary>
         /// Change message was received
-        /// (Some client changed his document, now we need to broadcast the change to others)
+        /// (Some client changed their document, now we need to broadcast the change to others)
         /// </summary>
-        private void ChangeReceived(Client from, JsonObject change)
+        private void ChangeReceived(Client from, JsonObject jsonChange)
         {
             lock (syncLock)
             {
+                // change instance has to be created inside the lock, because it accesses the document
+                Change change = Change.FromCodemirrorJson(jsonChange, document);
+
+                // TODO: handle coordinate update for old changes
+
                 // change document
-                document.ApplyChange(
-                    Change.FromJsonObject(change, document)
-                );
+                document.ApplyChange(change);
 
                 // broadcast change
                 foreach (Client client in clients)
@@ -147,7 +150,7 @@ namespace CodeGoat.Server
                         new JsonObject()
                             .Add("type", "change-broadcast")
                             .Add("familiar", client == from)
-                            .Add("change", change)
+                            .Add("change", change.ToCodemirrorJson())
                     );
                 }
             }
