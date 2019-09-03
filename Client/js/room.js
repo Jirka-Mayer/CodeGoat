@@ -39,6 +39,12 @@ class MainController
         this.speculativeChanges = []
 
         /**
+         * State of the document
+         * = Id of the last known committed change (or initial state)
+         */
+        this.documentState = null
+
+        /**
          * For each client id there's a list of markers defining their selection
          */
         this.selectionMarkers = {}
@@ -114,19 +120,19 @@ class MainController
                     if (this.DEBUG)
                         console.log("Room has been joined.")
                     
-                    this.setupInitialDocument(message.document)
+                    this.setupInitialDocument(message.document, message["document-state"])
                     this.isConnected = true // now we are inside a room
 
                     this.onNameChange() // broadcast name
                 }
                 else
                 {
-                    this.handleDocumentStateBroadcast(message.document)
+                    this.handleDocumentStateBroadcast(message.document, message["document-state"])
                 }
                 break
 
             case "change-broadcast":
-                if (this.speculativeChanges.filter(x => x.id = message.change.id).length > 0)
+                if (this.speculativeChanges.filter(x => x.id == message.change.id).length > 0)
                 {
                     // this change is inside the speculative changes
 
@@ -153,6 +159,10 @@ class MainController
                     // this change is a foreign one, apply it
                     this.changeDocumentBeforeSpeculativeChanges(message.change, "*server")
                 }
+
+                // update document state because the change is a newer commited change
+                this.documentState = message.change.id
+
                 break
 
             case "selection-broadcast":
@@ -195,9 +205,10 @@ class MainController
     /**
      * Setup the document content right after the connection succeeded
      */
-    setupInitialDocument(content)
+    setupInitialDocument(content, state)
     {
         this.speculativeChanges = []
+        this.documentState = state;
 
         this.editor.cm.replaceRange(
             content,
@@ -215,7 +226,7 @@ class MainController
      * Update document state
      * We received a document state broadcast to fix any possible errors that might have accumulated
      */
-    handleDocumentStateBroadcast(content)
+    handleDocumentStateBroadcast(content, state)
     {
         if (this.DEBUG)
             console.log("Received document state broadcast.")
@@ -243,7 +254,10 @@ class MainController
             // Remove all speculative changes.
             // These changes have been sent already and will be received from the server and
             // will seem like changes performed by other clients. But that's ok. Consistency is saved.
-            this.speculativeChanges = [] 
+            this.speculativeChanges = []
+
+            // the broadcasted document was definitely obtained by a comitted change
+            this.documentState = state;
 
             console.warn("Document state broadcast has made some changes.")
         }
@@ -415,18 +429,23 @@ class MainController
         // debug log
         if (this.DEBUG === "verbose")
             console.log("Editor change:", change)
-    
+
+        // list of all speculative change ids this change depends on
+        let dependencies = this.speculativeChanges.map(c => c.id)
+
         this.speculativeChanges.push(change)
         this.socket.send(JSON.stringify({
-            type: "change",
-            change: change
+            "type": "change",
+            "change": change,
+            "document-state": this.documentState,
+            "dependencies": dependencies
         }))
 
         // selection
         this.socket.send(JSON.stringify({
-            type: "selection-change",
-            selection: {
-                ranges: this.editor.cm.listSelections()
+            "type": "selection-change",
+            "selection": {
+                "ranges": this.editor.cm.listSelections()
             }
         }))
     }

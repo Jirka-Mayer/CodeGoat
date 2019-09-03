@@ -121,7 +121,9 @@ Klient se právě připojil a tohle je jeho první zpráva. Ohlašuje, že je v 
 ```js
 {
     "type": "change",
-    "change": {...} // change object returned by codemirror with an "id" field added
+    "change": {...}, // change object returned by codemirror with an "id" field added
+    "document-state": "last-change-id", // last known comitted state of the document when this change happened
+    "dependencies": ["change-id", "change-id"] // speculative change ids this change depends on
 }
 ```
 
@@ -172,6 +174,7 @@ Klient má podezření, že jeho dokument se neshoduje s tím na serveru, takže
 {
     "type": "document-state",
     "document": "Lorem ipsum\nDolor sit amet.",
+    "document-state": "last-change-id", // state of the document (id of the last commited change)
     "initial": false
 }
 ```

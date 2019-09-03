@@ -72,5 +72,21 @@ namespace CodeGoat.Server
                     removed.Select(x => (JsonValue)x).ToArray()
                 ));
         }
+
+        /// <summary>
+        /// Tracks where this change moves when another change is applied before this one
+        /// </summary>
+        /// <param name="change">Another change (the older one)</param>
+        /// <returns>This change after the motion has been applied</returns>
+        public Change UpdateLocationByChange(Change change)
+        {
+            return new Change {
+                Id = Id,
+                From = From.UpdateByChange(change),
+                To = To.UpdateByChange(change),
+                text = text,
+                removed = removed // NOTE: this value stops being correct here
+            };
+        }
     }
 }

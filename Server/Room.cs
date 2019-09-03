@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LightJson;
 
 namespace CodeGoat.Server
@@ -61,6 +62,7 @@ namespace CodeGoat.Server
                     new JsonObject()
                         .Add("type", "document-state")
                         .Add("document", document.GetText())
+                        .Add("document-state", document.State)
                         .Add("initial", true)
                 );
 
@@ -101,7 +103,12 @@ namespace CodeGoat.Server
             switch (message["type"].AsString)
             {
                 case "change":
-                    ChangeReceived(client, message["change"].AsJsonObject);
+                    ChangeReceived(
+                        client,
+                        message["document-state"].AsString,
+                        message["dependencies"].AsJsonArray.Select(x => x.AsString).ToList(),
+                        message["change"].AsJsonObject
+                    );
                     break;
 
                 case "selection-change":
@@ -131,14 +138,38 @@ namespace CodeGoat.Server
         /// Change message was received
         /// (Some client changed their document, now we need to broadcast the change to others)
         /// </summary>
-        private void ChangeReceived(Client from, JsonObject jsonChange)
+        private void ChangeReceived(
+            Client from,
+            string documentState,
+            List<string> dependencies,
+            JsonObject jsonChange
+        )
         {
             lock (syncLock)
             {
                 // change instance has to be created inside the lock, because it accesses the document
-                Change change = Change.FromCodemirrorJson(jsonChange, document);
+                Change change = Change.FromCodemirrorJson(jsonChange); // do NOT clamp to the document here !!!
 
-                // TODO: handle coordinate update for old changes
+                // ========= TODO: handle coordinate update for old changes
+
+                // find the change this new change is based on
+                int i = document.changes.FindIndex(c => c.Id == documentState);
+
+                // this is odd, broadcast document state and ignore this change
+                if (i == -1 && documentState != "initial")
+                {
+                    Console.WriteLine("Received a change that was made in an unknown document state.");
+                    BroadcastDocumentState();
+                    return;
+                }
+
+                // update coords for each new change that happened since then
+                // expect for changes this change is dependant on
+                foreach (Change c in document.changes.Skip(i + 1))
+                    if (!dependencies.Contains(c.Id))
+                        change = change.UpdateLocationByChange(c);
+
+                // =========
 
                 // change document
                 document.ApplyChange(change);
@@ -191,6 +222,7 @@ namespace CodeGoat.Server
                         new JsonObject()
                             .Add("type", "document-state")
                             .Add("document", document.GetText())
+                            .Add("document-state", document.State)
                             .Add("initial", false)
                     );
                 }

@@ -17,6 +17,15 @@ namespace CodeGoat.Server
 
         public int LineCount => lines.Count;
 
+        // HACK
+        public List<Change> changes = new List<Change>();
+
+        /// <summary>
+        /// Current state of the document
+        /// This is either initial, or the id of last committed change
+        /// </summary>
+        public string State => changes.Count == 0 ? "initial" : changes[changes.Count - 1].Id;
+
         public Document(string content = null)
         {
             lines.Add("");
@@ -55,8 +64,14 @@ namespace CodeGoat.Server
         /// </summary>
         public void ApplyChange(Change change)
         {
-            RemoveText(change.From, change.To);
-            InsertText(change.From, change.Text.ToList());
+            var from = ClampLocation(change.From);
+            var to = ClampLocation(change.To);
+
+            RemoveText(from, to);
+            InsertText(from, change.Text.ToList());
+
+            // HACK
+            changes.Add(change);
         }
 
         private void RemoveText(Location from, Location to)
@@ -80,6 +95,39 @@ namespace CodeGoat.Server
 
             lines.InsertRange(from.line + 1, text.Skip(1));
             lines[from.line + text.Count - 1] += lineEnd;
+        }
+
+        private Location ClampLocation(Location location)
+        {
+            Location ret = location;
+
+            // line
+            if (ret.line < 0)
+            {
+                Console.WriteLine("Clamping below on lines to 0");
+                ret.line = 0;
+            }
+
+            if (ret.line >= LineCount)
+            {
+                ret.line = LineCount - 1;
+                Console.WriteLine("Clamping above on lines to " + ret.line);
+            }
+
+            // char
+            if (ret.ch < 0)
+            {
+                Console.WriteLine("Clamping below on chars to 0");
+                ret.ch = 0;
+            }
+
+            if (ret.ch > lines[ret.line].Length) // may be equal
+            {
+                ret.ch = lines[ret.line].Length;
+                Console.WriteLine("Clamping above on chars to " + ret.ch);
+            }
+
+            return ret;
         }
     }
 }
