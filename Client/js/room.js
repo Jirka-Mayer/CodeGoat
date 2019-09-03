@@ -196,23 +196,25 @@ class MainController
         if (this.DEBUG)
             console.log("Received document state broadcast.")
 
-        this.speculativeChanges = []
+        this.editDocumentWithoutSpeculativeChanges(() => {
 
-        if (content != this.editor.cm.getValue())
-        {
-            let ranges = this.editor.cm.listSelections()
+            if (content != this.editor.cm.getValue())
+            {
+                let ranges = this.editor.cm.listSelections()
 
-            this.editor.cm.replaceRange(
-                content,
-                {line: 0, ch: 0},
-                {line: this.editor.cm.lineCount(), ch: null},
-                "*server"
-            )
+                this.editor.cm.replaceRange(
+                    content,
+                    {line: 0, ch: 0},
+                    {line: this.editor.cm.lineCount(), ch: null},
+                    "*server"
+                )
 
-            this.editor.cm.setSelections(ranges)
+                this.editor.cm.setSelections(ranges)
 
-            console.warn("Document state broadcast has made some changes.")
-        }
+                console.warn("Document state broadcast has made some changes.")
+            }
+
+        })
     }
 
     /**
@@ -221,26 +223,10 @@ class MainController
      */
     foreignChangeBroadcastReceived(change)
     {
-        // rollback speculative changes
-        for (let i = this.speculativeChanges.length - 1; i >= 0; i--)
-        {
-            this.applyChange(
-                invertChange(this.speculativeChanges[i]),
-                "*server"
-            )
-        }
-
-        // apply foreign change
-        this.applyChange(change, "*server")
-
-        // re-apply speculative changes
-        for (let i = 0; i < this.speculativeChanges.length; i++)
-        {
-            this.applyChange(
-                this.speculativeChanges[i],
-                "*server"
-            )
-        }
+        this.editDocumentWithoutSpeculativeChanges(() => {
+            // apply foreign change
+            this.applyChange(change, "*server")
+        })
     }
 
     /**
@@ -251,8 +237,7 @@ class MainController
     {
         if (this.speculativeChanges.length == 0)
         {
-            console.warn("No speculative changes yet we received a familiar change.")
-            console.warn("Maybe document broadcast happened? Applying the change.")
+            console.warn("No speculative changes yet we received a familiar change. Applying the change.")
             this.foreignChangeBroadcastReceived(change)
             return
         }
@@ -268,6 +253,34 @@ class MainController
 
         // the change is not speculative anymore
         this.speculativeChanges.splice(0, 1)
+    }
+
+    /**
+     * Perform some actions on the document, but rollback speculative changes before
+     * the action and re-apply them afterwards
+     */
+    editDocumentWithoutSpeculativeChanges(editAction)
+    {
+        // rollback speculative changes
+        for (let i = this.speculativeChanges.length - 1; i >= 0; i--)
+        {
+            this.applyChange(
+                invertChange(this.speculativeChanges[i]),
+                "*server"
+            )
+        }
+
+        // perform the action
+        editAction()
+
+        // re-apply speculative changes
+        for (let i = 0; i < this.speculativeChanges.length; i++)
+        {
+            this.applyChange(
+                this.speculativeChanges[i],
+                "*server"
+            )
+        }
     }
 
     /**
