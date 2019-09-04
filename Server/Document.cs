@@ -15,14 +15,16 @@ namespace CodeGoat.Server
         /// </summary>
         public DocumentLines Lines { get; private set; } = new DocumentLines();
 
-        // HACK
-        public List<Change> changes = new List<Change>();
+        /// <summary>
+        /// History of comitted changes
+        /// </summary>
+        private DocumentHistory history = new DocumentHistory();
 
         /// <summary>
         /// Current state of the document
         /// This is either initial, or the id of last committed change
         /// </summary>
-        public string State => changes.Count == 0 ? InitialState : changes[changes.Count - 1].Id;
+        public string State => history.LatestChange?.Id ?? InitialState;
 
         /// <summary>
         /// State identifier of the document when no changes have been applied
@@ -77,8 +79,7 @@ namespace CodeGoat.Server
             Lines = Lines.RemoveText(from, to);
             Lines = Lines.InsertText(from, new DocumentLines(change.Text));
 
-            // HACK
-            changes.Add(change);
+            history.Add(change);
         }
 
         /// <summary>
@@ -97,16 +98,13 @@ namespace CodeGoat.Server
             Change change, string documentState, IEnumerable<string> dependencies
         )
         {
-            // find the point in history this given change is based on
-            int i = changes.FindIndex(c => c.Id == documentState);
-
             // no point in history found, this is weird
-            if (i == -1 && documentState != Document.InitialState)
+            if (!history.Contains(documentState) && documentState != Document.InitialState)
                 return null;
 
-            // go through new changes one by one and update position of our given chagne accordingly
+            // go through new changes one by one and update position of our given change accordingly
             // (start at the base point in history)
-            foreach (Change c in changes.Skip(i + 1))
+            foreach (Change c in history.IterateChangesAfter(documentState))
             {
                 // skip dependencies, since the given change already counts with them
                 if (dependencies.Contains(c.Id))

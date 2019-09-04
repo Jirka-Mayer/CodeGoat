@@ -105,7 +105,7 @@ namespace CodeGoat.Server
         /// </summary>
         private void BroadcastDocumentStates()
         {
-            Console.WriteLine("Broadcasting document state.");
+            //Console.WriteLine("Broadcasting document state.");
 
             lock (rooms)
             {

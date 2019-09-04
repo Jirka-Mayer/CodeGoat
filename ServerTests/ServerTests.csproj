@@ -38,6 +38,7 @@
     <Compile Include="ColorGeneratorTest.cs" />
     <Compile Include="UpdateLocationByChangeTest.cs" />
     <Compile Include="DocumentLinesTest.cs" />
+    <Compile Include="DocumentHistoryTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

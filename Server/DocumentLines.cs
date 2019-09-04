@@ -129,6 +129,9 @@ namespace CodeGoat.Server
         /// </summary>
         public Location ClampLocation(Location location)
         {
+            // NOTE: Whenever there's an edit outside the bounds of the document,
+            // something went not quite right. That's why this method logs to the console.
+
             Location ret = location;
 
             // line

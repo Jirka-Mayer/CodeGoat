@@ -49,6 +49,7 @@
     <Compile Include="DocumentBroadcaster.cs" />
     <Compile Include="Str.cs" />
     <Compile Include="DocumentLines.cs" />
+    <Compile Include="DocumentHistory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">
