@@ -19,6 +19,17 @@ namespace CodeGoat.Server
         }
 
         /// <summary>
+        /// What's the minimal size of the queue
+        /// (this should work with 1 as well, but just to make sure...)
+        /// </summary>
+        private const int MinimalQueueSize = 20;
+
+        /// <summary>
+        /// After how many seconds is a change concidered to be old and ready to be discarded?
+        /// </summary>
+        private const int ChangeIsOldAfterSeconds = 10;
+
+        /// <summary>
         /// Latest committed changes.
         /// Does not contain the entire history, because it's not needed.
         /// Empty only on a fresh document, then can never get completely empty,
@@ -48,6 +59,8 @@ namespace CodeGoat.Server
                 time = DateTime.Now,
                 change = change
             });
+
+            ForgetOldChanges();
         }
 
         /// <summary>
@@ -79,6 +92,28 @@ namespace CodeGoat.Server
                         changeFound = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Performs a cleanup that gets rid of old chagnes
+        /// </summary>
+        public void ForgetOldChanges()
+        {
+            while (IsChangeOld(changes.Peek()))
+            {
+                changes.Dequeue();
+                
+                //Console.WriteLine($"Cleaning up change {changes.Peek().change.Id}, size {changes.Count}");
+            }
+        }
+
+        private bool IsChangeOld(ChangeTime ct)
+        {
+            // keep minimum number of changes in the queue
+            if (changes.Count <= MinimalQueueSize)
+                return false;
+
+            return (DateTime.Now - ct.time).TotalSeconds > ChangeIsOldAfterSeconds;
         }
     }
 }
