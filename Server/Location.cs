@@ -144,18 +144,18 @@ namespace CodeGoat.Server
             if (ret.line == change.From.line)
             {
                 // multiline
-                if (change.Text.Count > 1)
+                if (change.Text.LineCount > 1)
                 {
-                    ret.ch += change.Text[change.Text.Count - 1].Length - change.From.ch;
+                    ret.ch += change.Text[change.Text.LineCount - 1].Length - change.From.ch;
                 }
                 else // inline
                 {
-                    ret.ch += change.Text[change.Text.Count - 1].Length;
+                    ret.ch += change.Text[change.Text.LineCount - 1].Length;
                 }
             }
 
             // move line down by the number of inserted lines
-            ret.line += change.Text.Count - 1;
+            ret.line += change.Text.LineCount - 1;
 
             return ret;
         }

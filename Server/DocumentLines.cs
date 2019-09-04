@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using LightJson;
 
 namespace CodeGoat.Server
 {
@@ -83,6 +84,11 @@ namespace CodeGoat.Server
         }
 
         /// <summary>
+        /// Create instance from a json array of strings
+        /// </summary>
+        public DocumentLines(JsonArray json) : this(json.Select(s => s.AsString)) { }
+
+        /// <summary>
         /// Returns all the lines joined together by the \n character
         /// </summary>
         public override string ToString()
@@ -98,6 +104,14 @@ namespace CodeGoat.Server
         public List<string> ToList()
         {
             return new List<string>(lines);
+        }
+
+        /// <summary>
+        /// Converts the instance into a json array of strings (lines)
+        /// </summary>
+        public JsonArray ToJsonArray()
+        {
+            return new JsonArray(this.Select(l => (JsonValue)l).ToArray());
         }
 
         public IEnumerator<string> GetEnumerator()
