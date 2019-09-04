@@ -78,7 +78,7 @@ namespace CodeGoat.Server
         /// </summary>
         public void OnConnect()
         {
-            Console.WriteLine($"New client {Id} has connected.");
+            Log.Info($"New client {Id} has connected.");
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace CodeGoat.Server
                 }
             }
 
-            Console.WriteLine($"Client {Id} has disconnected.");
+            Log.Info($"Client {Id} has disconnected.");
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace CodeGoat.Server
                 }
             }
 
-            Console.WriteLine($"Client {Id} sent message {message} and it was not understood.");
+            Log.Info($"Client {Id} sent message {message} and it was not understood.");
         }
 
         /// <summary>

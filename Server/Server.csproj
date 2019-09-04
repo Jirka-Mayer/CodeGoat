@@ -34,6 +34,7 @@
     <Reference Include="Fleck">
       <HintPath>..\packages\Fleck.1.1.0\lib\net45\Fleck.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Posix" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="Str.cs" />
     <Compile Include="DocumentLines.cs" />
     <Compile Include="DocumentHistory.cs" />
+    <Compile Include="Log.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightJson\Sources\LightJson\LightJson.csproj">

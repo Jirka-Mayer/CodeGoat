@@ -57,7 +57,7 @@ namespace CodeGoat.Server
         /// </summary>
         public void OnClientJoined(Client client)
         {
-            Console.WriteLine($"Client {client.Id} joined the room '{Id}'.");
+            Log.Info($"Client {client.Id} joined the room '{Id}'.");
 
             lock (syncLock)
             {
@@ -102,7 +102,7 @@ namespace CodeGoat.Server
 
                 lastClientLeftAt = DateTime.Now;
 
-                Console.WriteLine(
+                Log.Info(
                     $"Client {client.Id} left the room '{Id}'. {clients.Count} clients remaining inside."
                 );
             }
@@ -153,7 +153,7 @@ namespace CodeGoat.Server
                     break;
 
                 default:
-                    Console.WriteLine(
+                    Log.Info(
                         $"Client {client.Id} sent message {message} to the room '{Id}' and it wasn't understood."
                     );
                     break;
@@ -186,7 +186,7 @@ namespace CodeGoat.Server
                 // the document state was not found in document history
                 if (updatedChange == null)
                 {
-                    Console.WriteLine("Received a change that was made in an unknown document state.");
+                    Log.Info("Received a change that was made in an unknown document state.");
                     BroadcastDocumentState();
                     return;
                 }

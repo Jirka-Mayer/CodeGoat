@@ -93,7 +93,7 @@ namespace CodeGoat.Server
                 if (rooms.TryGetValue(identifier, out room))
                     return room;
 
-                Console.WriteLine("Creating a new room: " + identifier);
+                Log.Info("Creating a new room: " + identifier);
 
                 room = new Room(identifier);
                 rooms.Add(identifier, room);
@@ -126,7 +126,7 @@ namespace CodeGoat.Server
                 foreach (Room room in roomsToRemove)
                 {
                     rooms.Remove(room.Id);
-                    Console.WriteLine("Removed a dead room: " + room.Id);
+                    Log.Info("Removed a dead room: " + room.Id);
                 }
             }
         }
