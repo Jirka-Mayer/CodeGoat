@@ -37,6 +37,7 @@
     <Compile Include="DocumentChangeApplicationTest.cs" />
     <Compile Include="ColorGeneratorTest.cs" />
     <Compile Include="UpdateLocationByChangeTest.cs" />
+    <Compile Include="DocumentLinesTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -15,6 +15,9 @@ namespace CodeGoat.Server
         /// </summary>
         private List<string> lines = new List<string>();
 
+        /// <summary>
+        /// Number of lines inside the document
+        /// </summary>
         public int LineCount => lines.Count;
 
         // HACK
@@ -30,6 +33,10 @@ namespace CodeGoat.Server
         /// State identifier of the document when no changes have been applied
         /// </summary>
         public const String InitialState = "initial";
+
+
+
+        // TODO: move these locations into the DocumentLines class
 
         /// <summary>
         /// Location before the first character in the document
@@ -55,7 +62,7 @@ namespace CodeGoat.Server
         /// <summary>
         /// Full text content of the document
         /// </summary>
-        public string GetText() => String.Join("\n", lines);
+        public string GetText() => String.Join("\n", lines); // TODO: lines.ToString on DocumentLines
 
         /// <summary>
         /// Sets the document content
@@ -86,6 +93,8 @@ namespace CodeGoat.Server
         /// </summary>
         public void ApplyChange(Change change)
         {
+            // TODO: move this implementation into the DocumentLines class
+
             var from = ClampLocation(change.From);
             var to = ClampLocation(change.To);
 
