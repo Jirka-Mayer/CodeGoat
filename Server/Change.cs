@@ -39,6 +39,19 @@ namespace CodeGoat.Server
         public ReadOnlyCollection<string> Removed => removed.AsReadOnly();
         private List<string> removed = new List<string>();
 
+        private Change() {}
+
+        public Change(string id, Location from, Location to, string text, string removed)
+        {
+            // TODO: implement DocumentLines constructor instead of string.Split("\n")
+
+            this.Id = id;
+            this.From = from;
+            this.To = to;
+            this.text = text.Split('\n').ToList();
+            this.removed = removed.Split('\n').ToList();
+        }
+
         /// <summary>
         /// Creates a change instance from a json object in a given document context
         /// </summary>

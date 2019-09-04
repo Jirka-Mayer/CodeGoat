@@ -148,31 +148,25 @@ namespace CodeGoat.Server
             lock (syncLock)
             {
                 // change instance has to be created inside the lock, because it accesses the document
-                Change change = Change.FromCodemirrorJson(jsonChange); // do NOT clamp to the document here !!!
+                // do NOT clamp to the document dimensions here !!!
+                Change change = Change.FromCodemirrorJson(jsonChange);
 
-                // ========= TODO: handle coordinate update for old changes
+                // handle location update for changes that were overrun
+                // by newer chagnes on their way to the server
+                Change updatedChange = document.UpdateChangeLocationByNewerChanges(
+                    change, documentState, dependencies
+                );
 
-                // find the change this new change is based on
-                int i = document.changes.FindIndex(c => c.Id == documentState);
-
-                // this is odd, broadcast document state and ignore this change
-                if (i == -1 && documentState != "initial")
+                // the document state was not found in document history
+                if (updatedChange == null)
                 {
                     Console.WriteLine("Received a change that was made in an unknown document state.");
                     BroadcastDocumentState();
                     return;
                 }
 
-                // update coords for each new change that happened since then
-                // expect for changes this change is dependant on
-                foreach (Change c in document.changes.Skip(i + 1))
-                    if (!dependencies.Contains(c.Id))
-                        change = change.UpdateLocationByChange(c);
-
-                // =========
-
                 // change document
-                document.ApplyChange(change);
+                document.ApplyChange(updatedChange);
 
                 // broadcast change
                 foreach (Client client in clients)
@@ -180,7 +174,7 @@ namespace CodeGoat.Server
                     client.Send(
                         new JsonObject()
                             .Add("type", "change-broadcast")
-                            .Add("change", change.ToCodemirrorJson())
+                            .Add("change", updatedChange.ToCodemirrorJson())
                     );
                 }
             }

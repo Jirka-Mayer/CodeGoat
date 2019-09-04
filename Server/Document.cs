@@ -24,13 +24,31 @@ namespace CodeGoat.Server
         /// Current state of the document
         /// This is either initial, or the id of last committed change
         /// </summary>
-        public string State => changes.Count == 0 ? "initial" : changes[changes.Count - 1].Id;
+        public string State => changes.Count == 0 ? InitialState : changes[changes.Count - 1].Id;
 
+        /// <summary>
+        /// State identifier of the document when no changes have been applied
+        /// </summary>
+        public const String InitialState = "initial";
+
+        /// <summary>
+        /// Location before the first character in the document
+        /// </summary>
+        public Location StartLocation => new Location(0, 0, Location.Stickiness.Before);
+
+        /// <summary>
+        /// Location after the last character in the document
+        /// </summary>
+        public Location EndLocation => new Location(LineCount - 1, lines.Last().Length, Location.Stickiness.After);
+
+        /// <summary>
+        /// Creates new document with the given content
+        /// </summary>
         public Document(string content = null)
         {
             lines.Add("");
 
-            if (content != null)
+            if (!String.IsNullOrEmpty(content))
                 this.SetText(content);
         }
 
@@ -47,11 +65,15 @@ namespace CodeGoat.Server
             if (text == null)
                 throw new ArgumentNullException(nameof(text));
 
-            lines.Clear();
-            lines.AddRange(text.Split('\n'));
-
-            if (lines.Count == 0)
-                lines.Add("");
+            ApplyChange(
+                new Change(
+                    Str.Random(16),
+                    StartLocation,
+                    EndLocation,
+                    text,
+                    GetText()
+                )
+            );
         }
 
         /// <summary>
@@ -97,6 +119,9 @@ namespace CodeGoat.Server
             lines[from.line + text.Count - 1] += lineEnd;
         }
 
+        /// <summary>
+        /// Clamp a location to make sure it's inside the document
+        /// </summary>
         private Location ClampLocation(Location location)
         {
             Location ret = location;
@@ -128,6 +153,43 @@ namespace CodeGoat.Server
             }
 
             return ret;
+        }
+
+        /// <summary>
+        /// Updates location of a given change to be positioned properly relative to newer changes
+        /// that were committed when this change travelled to the server.
+        /// </summary>
+        /// <param name="change">Given chage</param>
+        /// <param name="documentState">Committed state of the document the change is based on</param>
+        /// <param name="dependencies">
+        /// Other changes that the given change was speculatively based on,
+        /// meaning that it already counts with those and we can skip them.
+        /// (they will have arrived to the server by now, order of changes cannot be swapped when trasmitted)
+        /// </param>
+        /// <returns>The newly positioned change, or null if the documentState is not found</returns>
+        public Change UpdateChangeLocationByNewerChanges(
+            Change change, string documentState, IEnumerable<string> dependencies
+        )
+        {
+            // find the point in history this given change is based on
+            int i = changes.FindIndex(c => c.Id == documentState);
+
+            // no point in history found, this is weird
+            if (i == -1 && documentState != Document.InitialState)
+                return null;
+
+            // go through new changes one by one and update position of our given chagne accordingly
+            // (start at the base point in history)
+            foreach (Change c in changes.Skip(i + 1))
+            {
+                // skip dependencies, since the given change already counts with them
+                if (dependencies.Contains(c.Id))
+                    continue;
+
+                change = change.UpdateLocationByChange(c);
+            }
+
+            return change;
         }
     }
 }
