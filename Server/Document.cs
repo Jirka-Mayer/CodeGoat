@@ -6,19 +6,14 @@ namespace CodeGoat.Server
 {
     /// <summary>
     /// The text document that's being edited
+    /// It includes the history of changes so it can merge old changes properly
     /// </summary>
     public class Document
     {
         /// <summary>
         /// Lines of the document (current state)
-        /// (without the line break)
         /// </summary>
-        private List<string> lines = new List<string>();
-
-        /// <summary>
-        /// Number of lines inside the document
-        /// </summary>
-        public int LineCount => lines.Count;
+        public DocumentLines Lines { get; private set; } = new DocumentLines();
 
         // HACK
         public List<Change> changes = new List<Change>();
@@ -34,38 +29,21 @@ namespace CodeGoat.Server
         /// </summary>
         public const String InitialState = "initial";
 
-
-
-        // TODO: move these locations into the DocumentLines class
-
-        /// <summary>
-        /// Location before the first character in the document
-        /// </summary>
-        public Location StartLocation => new Location(0, 0, Location.Stickiness.Before);
-
-        /// <summary>
-        /// Location after the last character in the document
-        /// </summary>
-        public Location EndLocation => new Location(LineCount - 1, lines.Last().Length, Location.Stickiness.After);
-
         /// <summary>
         /// Creates new document with the given content
         /// </summary>
         public Document(string content = null)
         {
-            lines.Add("");
-
-            if (!String.IsNullOrEmpty(content))
-                this.SetText(content);
+            Lines = new DocumentLines(content);
         }
 
         /// <summary>
         /// Full text content of the document
         /// </summary>
-        public string GetText() => String.Join("\n", lines); // TODO: lines.ToString on DocumentLines
+        public string GetText() => Lines.ToString();
 
         /// <summary>
-        /// Sets the document content
+        /// Sets the document content as a new change to the document
         /// </summary>
         public void SetText(string text)
         {
@@ -75,8 +53,8 @@ namespace CodeGoat.Server
             ApplyChange(
                 new Change(
                     Str.Random(16),
-                    StartLocation,
-                    EndLocation,
+                    Lines.StartLocation,
+                    Lines.EndLocation,
                     text,
                     GetText()
                 )
@@ -86,82 +64,21 @@ namespace CodeGoat.Server
         /// <summary>
         /// Returns a line of the document via a zero-based index
         /// </summary>
-        public string GetLine(int index) => lines[index];
+        public string GetLine(int index) => Lines[index];
 
         /// <summary>
         /// Apply a change to the document
         /// </summary>
         public void ApplyChange(Change change)
         {
-            // TODO: move this implementation into the DocumentLines class
+            var from = Lines.ClampLocation(change.From);
+            var to = Lines.ClampLocation(change.To);
 
-            var from = ClampLocation(change.From);
-            var to = ClampLocation(change.To);
-
-            RemoveText(from, to);
-            InsertText(from, change.Text.ToList());
+            Lines = Lines.RemoveText(from, to);
+            Lines = Lines.InsertText(from, new DocumentLines(change.Text));
 
             // HACK
             changes.Add(change);
-        }
-
-        private void RemoveText(Location from, Location to)
-        {
-            string lineStart = lines[from.line].Substring(0, from.ch);
-            string lineEnd = lines[to.line].Substring(to.ch);
-
-            int removeCount = to.line - from.line;
-            if (removeCount > 0)
-                lines.RemoveRange(from.line + 1, removeCount);
-
-            lines[from.line] = lineStart + lineEnd;
-        }
-
-        private void InsertText(Location from, List<string> text)
-        {
-            string lineStart = lines[from.line].Substring(0, from.ch);
-            string lineEnd = lines[from.line].Substring(from.ch);
-
-            lines[from.line] = lineStart + text[0];
-
-            lines.InsertRange(from.line + 1, text.Skip(1));
-            lines[from.line + text.Count - 1] += lineEnd;
-        }
-
-        /// <summary>
-        /// Clamp a location to make sure it's inside the document
-        /// </summary>
-        private Location ClampLocation(Location location)
-        {
-            Location ret = location;
-
-            // line
-            if (ret.line < 0)
-            {
-                Console.WriteLine("Clamping below on lines to 0");
-                ret.line = 0;
-            }
-
-            if (ret.line >= LineCount)
-            {
-                ret.line = LineCount - 1;
-                Console.WriteLine("Clamping above on lines to " + ret.line);
-            }
-
-            // char
-            if (ret.ch < 0)
-            {
-                Console.WriteLine("Clamping below on chars to 0");
-                ret.ch = 0;
-            }
-
-            if (ret.ch > lines[ret.line].Length) // may be equal
-            {
-                ret.ch = lines[ret.line].Length;
-                Console.WriteLine("Clamping above on chars to " + ret.ch);
-            }
-
-            return ret;
         }
 
         /// <summary>

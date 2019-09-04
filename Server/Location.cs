@@ -52,8 +52,8 @@ namespace CodeGoat.Server
             if (loc.line < 0)
                 loc.line = 0;
 
-            if (doc != null && loc.line >= doc.LineCount)
-                loc.line = doc.LineCount - 1;
+            if (doc != null && loc.line >= doc.Lines.LineCount)
+                loc.line = doc.Lines.LineCount - 1;
 
             if (doc != null && obj["ch"].IsNull)
                 loc.ch = doc.GetLine(loc.line).Length;
