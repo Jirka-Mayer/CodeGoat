@@ -37,6 +37,16 @@ namespace CodeGoat.Server
         /// </summary>
         private ColorGenerator colorGenerator = new ColorGenerator();
 
+        /// <summary>
+        /// When was the last time a client has left the room
+        /// </summary>
+        private DateTime lastClientLeftAt = DateTime.Now; // screw null values
+
+        /// <summary>
+        /// After how many seconds can the room be removed for being abandoned?
+        /// </summary>
+        private const int DieAfterSeconds = 60 * 60; // 1 hour
+
         public Room(string id)
         {
             Id = id;
@@ -75,8 +85,6 @@ namespace CodeGoat.Server
         /// </summary>
         public void OnClientLeft(Client client)
         {
-            Console.WriteLine($"Client {client.Id} left the room '{Id}'.");
-
             lock (syncLock)
             {
                 clients.Remove(client);
@@ -91,6 +99,24 @@ namespace CodeGoat.Server
                             .Add("clientId", client.Id)
                     );
                 }
+
+                lastClientLeftAt = DateTime.Now;
+
+                Console.WriteLine(
+                    $"Client {client.Id} left the room '{Id}'. {clients.Count} clients remaining inside."
+                );
+            }
+        }
+
+        /// <summary>
+        /// Returns true if this room has been abandoned for
+        /// suficient amount of time and can be removed
+        /// </summary>
+        public bool IsDead()
+        {
+            lock (syncLock)
+            {
+                return clients.Count == 0 && (DateTime.Now - lastClientLeftAt).TotalSeconds > DieAfterSeconds;
             }
         }
 

@@ -93,6 +93,8 @@ namespace CodeGoat.Server
                 if (rooms.TryGetValue(identifier, out room))
                     return room;
 
+                Console.WriteLine("Creating a new room: " + identifier);
+
                 room = new Room(identifier);
                 rooms.Add(identifier, room);
                 return room;
@@ -109,8 +111,23 @@ namespace CodeGoat.Server
 
             lock (rooms)
             {
+                List<Room> roomsToRemove = new List<Room>();
+
                 foreach (Room room in rooms.Values)
+                {
                     room.BroadcastDocumentState();
+
+                    // also when in business, check for any dead rooms
+                    if (room.IsDead())
+                        roomsToRemove.Add(room);
+                }
+
+                // remove dead rooms
+                foreach (Room room in roomsToRemove)
+                {
+                    rooms.Remove(room.Id);
+                    Console.WriteLine("Removed a dead room: " + room.Id);
+                }
             }
         }
     }
