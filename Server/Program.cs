@@ -8,10 +8,10 @@ using Mono.Unix.Native;
 
 namespace CodeGoat.Server
 {
-	class MainClass
-	{
-		public static void Main(string[] args)
-		{
+    class MainClass
+    {
+        public static void Main(string[] args)
+        {
             // ports
             int httpPort = 8080;
             int webSocketPort = 8181;
@@ -49,7 +49,7 @@ namespace CodeGoat.Server
             
             RegisterHttpServerRoutes(httpServer, webSocketPort);
 
-			httpServer.Run();
+            httpServer.Run();
             editorServer.Start();
             webSocketServer.Start(editorServer.HandleNewConnection);
             
@@ -76,7 +76,7 @@ namespace CodeGoat.Server
 
             httpServer.Stop();
             editorServer.Stop();
-		}
+        }
 
         private static bool IsRunningOnMono()
         {
@@ -114,5 +114,5 @@ namespace CodeGoat.Server
                 return File.ReadAllText("." + match.Groups[0].Value);
             });
         }
-	}
+    }
 }
